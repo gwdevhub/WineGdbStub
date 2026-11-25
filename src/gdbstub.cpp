@@ -250,6 +250,10 @@ bool waitForStop(SOCKET client) {
             if (n <= 0) {
                 return false;
             }
+            if (std::memchr(drain, 0x03, static_cast<std::size_t>(n))) {
+                debugger::interrupt();
+                return true;
+            }
         }
     }
 }
@@ -265,6 +269,11 @@ void serveClient(SOCKET client) {
             return;
         }
         buffer.append(chunk, static_cast<std::size_t>(received));
+        if (buffer.find('\x03') != std::string::npos) {
+            buffer.erase(buffer.find('\x03'), 1);
+            debugger::interrupt();
+            sendAll(client, *frame("S05"));
+        }
         for (;;) {
             const auto packet = nextPacket(buffer);
             if (!packet) {
