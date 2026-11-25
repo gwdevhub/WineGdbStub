@@ -23,7 +23,7 @@ injected into any process. A copy is kept in GWToolbox++ at `tools/debug/WineGdb
 
 ## Use with a Guild Wars instance
 
-1. Add the stub to a launcher account's mods, switched on, with the absolute path of the DLL. Start the account from GW
+1. Add the stub to a launcher account's mods, switched on, with the full path of the DLL. Start the account from GW
    Launcher. The stub starts listening when it loads. Check with `ss -ltn | grep 2345`.
 2. Attach a debugger. From the command line:
    ```sh
@@ -31,10 +31,13 @@ injected into any process. A copy is kept in GWToolbox++ at `tools/debug/WineGdb
    ```
    Connecting stops the game, and `detach` resumes it. `monitor modules` lists the loaded modules and their base
    addresses.
-3. For GWToolbox++ symbols, `tools/attach_symbols.py` defines an `attach_symbols` command. It finds GWToolbox's base
-   address through `monitor modules` and loads its symbols. GDB can also apply the offset itself, because the stub reports
-   it through `qOffsets`, so the helper is only needed for the command-line flow. `tools/clion_init.gdb` runs the whole
-   sequence. It has the absolute path of `attach_symbols.py` in this checkout, so edit that path for yours.
+3. From the command line, load the module's debug file as the program and connect. The stub reports the module's move
+   through `qOffsets`, so GDB places the symbols at the real address:
+   ```sh
+   gdb -ex "set architecture i386" -ex "file path/to/GWToolboxdll.debug" -ex "target remote localhost:2345"
+   ```
+   `tools/attach_symbols.py` also defines `attach_symbols <debug-file>`, which loads a module's symbols at its base as
+   reported by `monitor modules`. Source it with `source tools/attach_symbols.py` if you want that.
 4. For CLion, create a Remote Debug configuration: target `localhost:2345`, and the debug build's `.debug` file as the
    symbol file.
 
